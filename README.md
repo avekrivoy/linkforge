@@ -13,15 +13,16 @@ Each file declares exactly one interface alongside its no-op implementation, so 
 ## Layout
 
 ```
-cmd/      linkforged        service binary — prints its version, nothing more
+cmd/      linkforge         service binary — prints its version, nothing more
           linkctl           operator CLI   — prints its version, nothing more
 
 pkg/                        reusable libraries — a separate Go module
-  shortid/  Codec           base62 encode/decode                       M1
-            Generator       collision-resistant code issuing           M4
+  shortid/  Generator       collision-resistant code issuing           M4
   cache/    Cache[K,V]      bounded cache on the redirect hot path     M4
 
 internal/                   application code
+  base62/                   base62 encode/decode                       M1
+  store/                    in-memory link store                       M1
   link/     Store           link persistence, declared by its consumer M1 / M7
             Shortener       the domain service behind every transport  M2
   click/    Ingester        non-blocking submission from the hot path  M5
