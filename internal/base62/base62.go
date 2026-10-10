@@ -1,23 +1,25 @@
 package base62
 
 import (
+	"errors"
+	"math"
 	"slices"
 	"strings"
 )
 
 const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-// divider returns quotient and remainder
-func divider(dividend, divisor uint64) (uint64, uint64) {
-	return dividend / divisor, dividend % divisor
-}
+var (
+	ErrEmpty            = errors.New("base62: empty code")
+	ErrInvalidCharacter = errors.New("base62: invalid character")
+	ErrOverflow         = errors.New("base62: code is too long")
+)
 
 // Encode renders a number with no padding.
 func Encode(v uint64) string {
 	var encoded []string
 	for {
-		quotient, remainder := divider(v, 62)
-
+		quotient, remainder := v/62, v%62
 		encoded = append(encoded, string(alphabet[remainder]))
 		if quotient == 0 {
 			break
@@ -27,4 +29,43 @@ func Encode(v uint64) string {
 	slices.Reverse(encoded)
 
 	return strings.Join(encoded, "")
+}
+
+// EncodeWidth does the same but left-pads with zeroes to at least width characters. The value itself is never truncated.
+func EncodeWidth(v uint64, width int) string {
+	encoded := Encode(v)
+
+	if width > len(encoded) {
+		fillers := strings.Repeat("0", width-len(encoded))
+		return fillers + encoded
+	}
+
+	return encoded
+}
+
+// Decode parses a code back into a number.
+func Decode(s string) (uint64, error) {
+	if len(s) == 0 {
+		return 0, ErrEmpty
+	}
+
+	if len(s) > 11 {
+		return 0, ErrOverflow
+	}
+
+	trimmed := strings.TrimLeft(s, "0")
+
+	var decoded uint64
+
+	for i := len(trimmed); i > 0; i-- {
+		if strings.ContainsAny(alphabet, string(trimmed[i-1])) {
+			power := len(trimmed) - i
+			positionValue := strings.Index(alphabet, string(trimmed[i-1]))
+			decoded += uint64(float64(positionValue) * math.Pow(62, float64(power)))
+			continue
+		}
+		return 0, ErrInvalidCharacter
+	}
+
+	return decoded, nil
 }

@@ -1,6 +1,12 @@
 package link
 
-import "context"
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/avekrivoy/linkforge/internal/base62"
+)
 
 // Shortener is the domain service every transport sits in front of. No
 // transport may reach a Store directly.
@@ -23,3 +29,22 @@ func (NoopShortener) Resolve(context.Context, string) (Link, error) { return Lin
 func (NoopShortener) List(context.Context, string, Page) ([]Link, error) { return nil, nil }
 
 func (NoopShortener) Delete(context.Context, string, string) error { return nil }
+
+func New(id uint64, target string) (Link, error) {
+	if len(target) == 0 {
+		return Link{}, ErrEmptyTarget
+	}
+
+	if !(strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://")) {
+		return Link{}, ErrUnsupportedScheme
+	}
+
+	link := Link{
+		ID:        id,
+		Code:      base62.EncodeWidth(id, 6),
+		Target:    target,
+		CreatedAt: time.Now().UTC(),
+	}
+
+	return link, nil
+}
