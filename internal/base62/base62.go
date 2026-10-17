@@ -53,18 +53,21 @@ func Decode(s string) (uint64, error) {
 		return 0, ErrOverflow
 	}
 
-	trimmed := strings.TrimLeft(s, "0")
-
 	var decoded uint64
 
-	for i := len(trimmed); i > 0; i-- {
-		if strings.ContainsAny(alphabet, string(trimmed[i-1])) {
-			power := len(trimmed) - i
-			positionValue := strings.Index(alphabet, string(trimmed[i-1]))
-			decoded += uint64(float64(positionValue) * math.Pow(62, float64(power)))
-			continue
+	for i := 0; i < len(s); i++ {
+		positionValue := strings.IndexByte(alphabet, s[i])
+		if positionValue < 0 {
+			return 0, ErrInvalidCharacter
 		}
-		return 0, ErrInvalidCharacter
+
+		digit := uint64(positionValue)
+
+		if decoded > (math.MaxUint64-digit)/62 {
+			return 0, ErrOverflow
+		}
+
+		decoded = decoded*62 + digit
 	}
 
 	return decoded, nil
