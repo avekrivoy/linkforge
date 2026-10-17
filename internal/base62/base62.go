@@ -56,7 +56,6 @@ func EncodeRecursive(v uint64) string {
 	return EncodeRecursive(quotient) + encoded.String()
 }
 
-// Decode parses a code back into a number.
 func Decode(s string) (uint64, error) {
 	if len(s) == 0 {
 		return 0, ErrEmpty
@@ -66,25 +65,21 @@ func Decode(s string) (uint64, error) {
 		return 0, ErrOverflow
 	}
 
-	trimmed := strings.TrimLeft(s, "0")
-
 	var decoded uint64
 
-	for i := len(trimmed); i > 0; i-- {
-		if strings.ContainsAny(alphabet, string(trimmed[i-1])) {
-			power := len(trimmed) - i
-			positionValue := strings.Index(alphabet, string(trimmed[i-1]))
-
-			decodedChar := uint64(float64(positionValue) * math.Pow(62, float64(power)))
-
-			if math.MaxUint64-decoded < decodedChar {
-				return 0, ErrOverflow
-			}
-
-			decoded += decodedChar
-			continue
+	for i := 0; i < len(s); i++ {
+		positionValue := strings.IndexByte(alphabet, s[i])
+		if positionValue < 0 {
+			return 0, ErrInvalidCharacter
 		}
-		return 0, ErrInvalidCharacter
+
+		digit := uint64(positionValue)
+
+		if decoded > (math.MaxUint64-digit)/62 {
+			return 0, ErrOverflow
+		}
+
+		decoded = decoded*62 + digit
 	}
 
 	return decoded, nil
