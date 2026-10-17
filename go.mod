@@ -1,3 +1,3 @@
-module github.com/skskuzan/rd-linkforge
+module github.com/avekrivoy/linkforge
 
-go 1.25
+go 1.27.1

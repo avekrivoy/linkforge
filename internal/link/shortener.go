@@ -1,6 +1,8 @@
 package link
 
-import "context"
+import (
+	"context"
+)
 
 // Shortener is the domain service every transport sits in front of. No
 // transport may reach a Store directly.
