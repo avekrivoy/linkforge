@@ -61,7 +61,14 @@ func Decode(s string) (uint64, error) {
 		if strings.ContainsAny(alphabet, string(trimmed[i-1])) {
 			power := len(trimmed) - i
 			positionValue := strings.Index(alphabet, string(trimmed[i-1]))
-			decoded += uint64(float64(positionValue) * math.Pow(62, float64(power)))
+
+			decodedChar := uint64(float64(positionValue) * math.Pow(62, float64(power)))
+
+			if math.MaxUint64-decoded < decodedChar {
+				return 0, ErrOverflow
+			}
+
+			decoded += decodedChar
 			continue
 		}
 		return 0, ErrInvalidCharacter
