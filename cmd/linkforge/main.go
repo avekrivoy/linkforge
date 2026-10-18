@@ -13,23 +13,28 @@ import (
 // var version = "dev"
 
 func main() {
+	var id uint64
+
 	links := os.Args[1:]
+	storage := store.New()
 
-	s := store.New()
-
-	for pos, lnk := range links {
-		l, err := link.New(uint64(pos+1), lnk)
-
-		if err != nil {
-			panic(err)
-		}
-		err = store.Add(s, l)
+	for _, l := range links {
+		lnk, err := link.New(id+1, l)
 
 		if err != nil {
-			panic(err)
+			fmt.Fprintln(os.Stderr, err)
+			continue
 		}
-		fmt.Printf("%v\t%s\n", l.Code, l.Target)
+		err = store.Add(storage, lnk)
+
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
+		id += 1
+
+		fmt.Printf("%v\t%s\n", lnk.Code, lnk.Target)
 	}
 
-	fmt.Printf("Total: %v\n", store.Count(s))
+	fmt.Printf("Total: %v\n", store.Count(storage))
 }
