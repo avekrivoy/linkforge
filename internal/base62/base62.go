@@ -3,7 +3,6 @@ package base62
 import (
 	"errors"
 	"math"
-	"slices"
 	"strings"
 )
 
@@ -17,18 +16,20 @@ var (
 
 // Encode renders a number with no padding.
 func Encode(v uint64) string {
-	var encoded []string
+	var encoded [11]byte
+	i := len(encoded) - 1
+
 	for {
 		quotient, remainder := v/62, v%62
-		encoded = append(encoded, string(alphabet[remainder]))
+		encoded[i] = alphabet[remainder]
 		if quotient == 0 {
 			break
 		}
 		v = quotient
+		i--
 	}
-	slices.Reverse(encoded)
 
-	return strings.Join(encoded, "")
+	return string(encoded[i:])
 }
 
 // EncodeWidth does the same but left-pads with zeroes to at least width characters. The value itself is never truncated.
