@@ -1,6 +1,7 @@
 package link
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -45,8 +46,17 @@ func (p Page) Normalize() Page {
 	return p
 }
 
-// AfterID decodes the cursor. An empty cursor returns 0, nil.
-// A cursor that base62.Decode rejects returns an error that wraps ErrInvalidCursor.
-// func (p Page) AfterID() (uint64, error) {
+// AfterID decodes the cursor.
+func (p Page) AfterID() (uint64, error) {
+	if len(p.Cursor) == 0 {
+		return 0, nil
+	}
 
-// }
+	decoded, err := base62.Decode(p.Cursor)
+
+	if err != nil {
+		return 0, fmt.Errorf("%v: %w", ErrInvalidCursor, err)
+	}
+
+	return decoded, nil
+}
