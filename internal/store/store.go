@@ -12,7 +12,7 @@ type Store struct {
 }
 
 var (
-	ErrDuplicateID = errors.New("store: id is already is taken")
+	ErrDuplicateID = errors.New("store: id is already taken")
 )
 
 // New creates a new Store

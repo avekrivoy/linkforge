@@ -1,6 +1,7 @@
 package link
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,6 +14,12 @@ func New(id uint64, target string) (Link, error) {
 	}
 
 	if !(strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://")) {
+		return Link{}, ErrUnsupportedScheme
+	}
+
+	_, err := url.ParseRequestURI(target)
+
+	if err != nil {
 		return Link{}, ErrUnsupportedScheme
 	}
 
