@@ -18,6 +18,7 @@ var (
 func Encode(v uint64) string {
 	var encoded [11]byte
 	i := len(encoded) - 1
+
 	for {
 		quotient, remainder := v/62, v%62
 		encoded[i] = alphabet[remainder]
