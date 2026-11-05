@@ -55,7 +55,7 @@ func (p Page) AfterID() (uint64, error) {
 	decoded, err := base62.Decode(p.Cursor)
 
 	if err != nil {
-		return 0, fmt.Errorf("%v: %w", ErrInvalidCursor, err)
+		return 0, fmt.Errorf("%v: %w", err, ErrInvalidCursor)
 	}
 
 	return decoded, nil

@@ -3,27 +3,12 @@
 package link
 
 import (
-	"errors"
 	"time"
 )
 
 const (
 	DefaultPageLimit = 20
 	MaxPageLimit     = 100
-)
-
-var (
-	ErrEmptyTarget       = errors.New("link: empty target")
-	ErrUnsupportedScheme = errors.New("link: unsupported scheme")
-	ErrNotFound          = errors.New("link: not found")
-	ErrAliasTaken        = errors.New("link: alias already taken")
-	ErrInvalidAlias      = errors.New("link: invalid alias")
-	ErrReservedAlias     = errors.New("link: reserved alias")
-	ErrForbidden         = errors.New("link: forbidden")
-	ErrExpired           = errors.New("link: expired")
-	ErrInvalidExpiry     = errors.New("link: invalid expiry")
-	ErrEmptyOwner        = errors.New("link: owner is required")
-	ErrInvalidCursor     = errors.New("link: invalid cursor")
 )
 
 // Link is a shortened URL. A zero expiry means it never expires.
@@ -50,3 +35,11 @@ type Page struct {
 	Cursor string
 	Limit  int
 }
+
+type Service struct {
+	ID    uint64
+	now   func() time.Time
+	Store Store
+}
+
+type Option func(*Service)

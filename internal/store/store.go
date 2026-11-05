@@ -1,35 +1,54 @@
 package store
 
 import (
-	"errors"
+	"context"
 	"slices"
 
 	"github.com/avekrivoy/linkforge/internal/link"
 )
 
 type Store struct {
-	byID map[uint64]link.Link
+	byID   map[uint64]link.Link
+	byCode map[string]uint64
 }
 
-var (
-	ErrDuplicateID = errors.New("store: id is already taken")
-)
-
 // New creates a new Store
-func New() Store {
-	return Store{
+func New() *Store {
+	return &Store{
 		byID: make(map[uint64]link.Link),
 	}
 }
 
-// Add adds a link to the store
-func Add(s Store, l link.Link) error {
-	if _, ok := s.byID[l.ID]; ok {
-		return ErrDuplicateID
-	}
-	s.byID[l.ID] = l
+func (s *Store) Create(ctx context.Context, l link.Link) (link.Link, error) {
 
-	return nil
+	if _, ok := s.byID[l.ID]; ok {
+		return link.Link{}, ErrDuplicateID
+	}
+
+	if _, err := s.ByCode(ctx, l.Code); err == nil {
+		return link.Link{}, link.ErrAliasTaken
+	}
+
+	s.byID[l.ID] = l
+	s.byCode[l.Code] = l.ID
+
+	return l, nil
+}
+
+func (s *Store) ByCode(ctx context.Context, code string) (link.Link, error) {
+	id, ok := s.byCode[code]
+
+	if !ok {
+		return link.Link{}, link.ErrNotFound
+	}
+
+	l, ok := s.byID[id]
+
+	if !ok {
+		return link.Link{}, link.ErrNotFound
+	}
+
+	return l, nil
 }
 
 // Get returns a link from the store
@@ -57,6 +76,6 @@ func All(s Store) []link.Link {
 }
 
 // Count returns a number of elements in the store
-func Count(s Store) int {
+func Count(s *Store) int {
 	return len(s.byID)
 }
