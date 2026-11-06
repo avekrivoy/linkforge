@@ -126,6 +126,9 @@ func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error)
 				return Link{}, fmt.Errorf("an error occured: %w", err)
 			}
 
+			s.ID++
+			l.ID = s.ID
+
 			return link, nil
 		}
 

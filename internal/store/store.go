@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	"github.com/avekrivoy/linkforge/internal/link"
@@ -12,10 +13,10 @@ type Store struct {
 	byCode map[string]uint64
 }
 
-// New creates a new Store
 func New() *Store {
 	return &Store{
-		byID: make(map[uint64]link.Link),
+		byID:   make(map[uint64]link.Link),
+		byCode: make(map[string]uint64),
 	}
 }
 
@@ -35,6 +36,15 @@ func (s *Store) Create(ctx context.Context, l link.Link) (link.Link, error) {
 	return l, nil
 }
 
+func (s *Store) Delete(ctx context.Context, id uint64) error {
+	if _, ok := s.byID[id]; !ok {
+		return fmt.Errorf("failed to delete the link from the store: %w", link.ErrNotFound)
+	}
+	delete(s.byID, id)
+
+	return nil
+}
+
 func (s *Store) ByCode(ctx context.Context, code string) (link.Link, error) {
 	id, ok := s.byCode[code]
 
@@ -52,13 +62,13 @@ func (s *Store) ByCode(ctx context.Context, code string) (link.Link, error) {
 }
 
 // Get returns a link from the store
-func Get(s Store, id uint64) (link.Link, bool) {
+func (s *Store) Get(id uint64) (link.Link, bool) {
 	l, ok := s.byID[id]
 	return l, ok
 }
 
 // All returns a slice of links sorted by ID ascending
-func All(s Store) []link.Link {
+func (s *Store) All() []link.Link {
 	var ids = make([]uint64, 0, len(s.byID))
 	var links = make([]link.Link, 0, len(s.byID))
 
@@ -76,6 +86,50 @@ func All(s Store) []link.Link {
 }
 
 // Count returns a number of elements in the store
-func Count(s *Store) int {
+func (s *Store) Count() int {
 	return len(s.byID)
+}
+
+func (s *Store) ListByOwner(_ context.Context, ownerID string, page link.Page) ([]link.Link, error) {
+	page = page.Normalize()
+
+	afterID, err := page.AfterID()
+	if err != nil {
+		return nil, err
+	}
+
+	ids := sortedIDs(s.byID)
+	links := make([]link.Link, 0, page.Limit)
+
+	for _, id := range ids {
+		if id <= afterID {
+			continue
+		}
+
+		l := s.byID[id]
+
+		if l.OwnerID != ownerID {
+			continue
+		}
+
+		links = append(links, l)
+
+		if len(links) == page.Limit {
+			break
+		}
+	}
+
+	return links, nil
+}
+
+func sortedIDs(m map[uint64]link.Link) []uint64 {
+	ids := make([]uint64, 0, len(m))
+
+	for id := range m {
+		ids = append(ids, id)
+	}
+
+	slices.Sort(ids)
+
+	return ids
 }
