@@ -1,32 +1,49 @@
 // Command linkforge is the Linkforge service binary.
 package main
 
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/avekrivoy/linkforge/internal/link"
+	"github.com/avekrivoy/linkforge/internal/store"
+)
+
 // version is overwritten at build time with -ldflags "-X main.version=...".
 // var version = "dev"
 
 func main() {
-	// var id uint64
+	ctx := context.Background()
+	args := os.Args[1:]
+	storage := store.New()
+	svc := link.NewService(storage)
+	ownerID := "demo"
 
-	// links := os.Args[1:]
-	// storage := store.New()
+	for _, l := range args {
 
-	// for _, l := range links {
-	// 	lnk, err := link.New(id+1, l)
+		req := link.ShortenRequest{
+			Target:  l,
+			OwnerID: ownerID,
+		}
 
-	// 	if err != nil {
-	// 		fmt.Fprintln(os.Stderr, err)
-	// 		continue
-	// 	}
-	// 	err = store.Add(storage, lnk)
+		_, err := svc.Shorten(ctx, req)
 
-	// 	if err != nil {
-	// 		fmt.Fprintln(os.Stderr, err)
-	// 		continue
-	// 	}
-	// 	id += 1
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
+	}
 
-	// 	fmt.Printf("%v\t%s\n", lnk.Code, lnk.Target)
-	// }
+	links, err := svc.List(ctx, ownerID, link.Page{})
 
-	// fmt.Printf("Total: %v\n", store.Count(storage))
+	if err != nil {
+		fmt.Printf("couldn't list %s %s", ownerID, err)
+	}
+
+	for _, v := range links {
+		fmt.Printf("%v\t%v\n", v.Code, v.Target)
+	}
+
+	fmt.Printf("Total: %v\n", storage.Count())
 }
