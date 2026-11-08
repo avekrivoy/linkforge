@@ -46,15 +46,13 @@ func EncodeWidth(v uint64, width int) string {
 
 // EncodeRecursive returns the same result as Encode
 func EncodeRecursive(v uint64) string {
-	var encoded strings.Builder
-
 	quotient, remainder := v/62, v%62
-	encoded.WriteString(string(alphabet[remainder]))
+
 	if quotient == 0 {
-		return encoded.String()
+		return string(alphabet[remainder])
 	}
 
-	return EncodeRecursive(quotient) + encoded.String()
+	return EncodeRecursive(quotient) + string(alphabet[remainder])
 }
 
 func Decode(s string) (uint64, error) {

@@ -8,6 +8,8 @@ import (
 	"github.com/avekrivoy/linkforge/internal/link"
 )
 
+var _ link.Store = (*Store)(nil)
+
 type Store struct {
 	byID   map[uint64]link.Link
 	byCode map[string]uint64
@@ -37,10 +39,20 @@ func (s *Store) Create(ctx context.Context, l link.Link) (link.Link, error) {
 }
 
 func (s *Store) Delete(ctx context.Context, id uint64) error {
-	if _, ok := s.byID[id]; !ok {
-		return fmt.Errorf("failed to delete the link from the store: %w", link.ErrNotFound)
+	l, ok := s.byID[id]
+	if !ok {
+		return fmt.Errorf("failed to delete the link from the store by ID: %w", link.ErrNotFound)
 	}
+	// if l, ok := s.byID[id]; !ok {
+	// 	return fmt.Errorf("failed to delete the link from the store: %w", link.ErrNotFound)
+	// }
+
 	delete(s.byID, id)
+
+	if _, ok := s.byCode[l.Code]; !ok {
+		return fmt.Errorf("failed to delete the link from the store by Code: %w", link.ErrNotFound)
+	}
+	delete(s.byCode, l.Code)
 
 	return nil
 }

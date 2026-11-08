@@ -48,6 +48,9 @@ These hold for every milestone.
 3. **Analytics never blocks a redirect.** `Ingester.Submit` drops events under saturation rather than applying backpressure.
 4. **Every listener shares one lifecycle contract**, which is what makes a single coordinated graceful shutdown possible.
 
+## Shortener
+The Shortener interface provides an API for managing shortened URLs. It allows users to create short links with optional custom aliases and expiration dates, resolve short codes to their original URLs, and delete links. It also supports listing links owned by a specific user with cursor-based pagination.
+
 ## Working on it
 
 ```bash

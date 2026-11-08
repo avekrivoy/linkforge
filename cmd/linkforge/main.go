@@ -35,13 +35,7 @@ func main() {
 		}
 	}
 
-	links, err := svc.List(ctx, ownerID, link.Page{})
-
-	if err != nil {
-		fmt.Printf("couldn't list %s %s", ownerID, err)
-	}
-
-	for _, v := range links {
+	for _, v := range storage.All() {
 		fmt.Printf("%v\t%v\n", v.Code, v.Target)
 	}
 
