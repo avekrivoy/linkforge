@@ -3,8 +3,12 @@
 package link
 
 import (
-	"errors"
 	"time"
+)
+
+const (
+	DefaultPageLimit = 20
+	MaxPageLimit     = 100
 )
 
 // Link is a shortened URL. A zero expiry means it never expires.
@@ -12,17 +16,30 @@ type Link struct {
 	ID        uint64
 	Code      string
 	Target    string
+	OwnerID   string
 	CreatedAt time.Time
+	ExpiresAt time.Time // the zero value means: never expires
 }
 
 // ShortenRequest carries everything needed to create a link. An empty alias
 // asks for a generated code.
-type ShortenRequest struct{}
+type ShortenRequest struct {
+	Target    string
+	Alias     string // empty means: generate the code
+	OwnerID   string
+	ExpiresAt time.Time
+}
 
 // Page describes one slice of a cursor-paginated listing.
-type Page struct{}
+type Page struct {
+	Cursor string
+	Limit  int
+}
 
-var (
-	ErrEmptyTarget       = errors.New("link: empty target")
-	ErrUnsupportedScheme = errors.New("link: unsupported scheme")
-)
+type Service struct {
+	ID    uint64
+	now   func() time.Time
+	Store Store
+}
+
+type Option func(*Service)

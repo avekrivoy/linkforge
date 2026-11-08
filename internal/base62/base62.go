@@ -44,7 +44,17 @@ func EncodeWidth(v uint64, width int) string {
 	return encoded
 }
 
-// Decode parses a code back into a number.
+// EncodeRecursive returns the same result as Encode
+func EncodeRecursive(v uint64) string {
+	quotient, remainder := v/62, v%62
+
+	if quotient == 0 {
+		return string(alphabet[remainder])
+	}
+
+	return EncodeRecursive(quotient) + string(alphabet[remainder])
+}
+
 func Decode(s string) (uint64, error) {
 	if len(s) == 0 {
 		return 0, ErrEmpty

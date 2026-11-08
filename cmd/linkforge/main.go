@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -13,28 +14,30 @@ import (
 // var version = "dev"
 
 func main() {
-	var id uint64
-
-	links := os.Args[1:]
+	ctx := context.Background()
+	args := os.Args[1:]
 	storage := store.New()
+	svc := link.NewService(storage)
+	ownerID := "demo"
 
-	for _, l := range links {
-		lnk, err := link.New(id+1, l)
+	for _, l := range args {
+
+		req := link.ShortenRequest{
+			Target:  l,
+			OwnerID: ownerID,
+		}
+
+		_, err := svc.Shorten(ctx, req)
 
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			continue
 		}
-		err = store.Add(storage, lnk)
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			continue
-		}
-		id += 1
-
-		fmt.Printf("%v\t%s\n", lnk.Code, lnk.Target)
 	}
 
-	fmt.Printf("Total: %v\n", store.Count(storage))
+	for _, v := range storage.All() {
+		fmt.Printf("%v\t%v\n", v.Code, v.Target)
+	}
+
+	fmt.Printf("Total: %v\n", storage.Count())
 }
