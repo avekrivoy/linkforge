@@ -114,16 +114,15 @@ func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error)
 					continue
 				}
 
-				return Link{}, fmt.Errorf("an error occured: %w", err)
+				return Link{}, fmt.Errorf("an error occurred: %w", err)
 			}
 
 			s.ID++
-			l.ID = s.ID
 
 			return link, nil
 		}
 
-		return Link{}, fmt.Errorf("an error occured: %w", ErrAliasTaken)
+		return Link{}, fmt.Errorf("an error occurred: %w", ErrAliasTaken)
 	}
 }
 
@@ -161,7 +160,7 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 		if errors.Is(err, ErrNotFound) {
 			return fmt.Errorf("failed to delete the link: %w", err)
 		} else {
-			return fmt.Errorf("failed to delete the link - unexpected error occured: %w", err)
+			return fmt.Errorf("failed to delete the link - unexpected error occurred: %w", err)
 		}
 	}
 
@@ -170,7 +169,7 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 	}
 
 	if err = s.Store.Delete(ctx, l.ID); err != nil {
-		return fmt.Errorf("failed to delete the link - unexpected error occured: %w", err)
+		return fmt.Errorf("failed to delete the link - unexpected error occurred: %w", err)
 	}
 	return nil
 }
