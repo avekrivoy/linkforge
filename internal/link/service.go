@@ -57,6 +57,10 @@ func validateAlias(a string) error {
 }
 
 func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error) {
+	if err := ctx.Err(); err != nil {
+		return Link{}, err
+	}
+
 	if len(req.OwnerID) == 0 {
 		return Link{}, ErrEmptyOwner
 	}
@@ -127,6 +131,10 @@ func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error)
 }
 
 func (s *Service) Resolve(ctx context.Context, code string) (Link, error) {
+	if err := ctx.Err(); err != nil {
+		return Link{}, err
+	}
+
 	now := s.now()
 	l, err := s.Store.ByCode(ctx, code)
 
@@ -142,6 +150,10 @@ func (s *Service) Resolve(ctx context.Context, code string) (Link, error) {
 }
 
 func (s *Service) List(ctx context.Context, ownerID string, page Page) ([]Link, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	if ownerID == "" {
 		return nil, ErrEmptyOwner
 	}
@@ -150,6 +162,10 @@ func (s *Service) List(ctx context.Context, ownerID string, page Page) ([]Link, 
 }
 
 func (s *Service) Delete(ctx context.Context, ownerID string, code string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	if len(ownerID) == 0 {
 		return ErrEmptyOwner
 	}
@@ -178,6 +194,15 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 func WithClock(now func() time.Time) Option {
 	return func(s *Service) {
 		s.now = now
+	}
+}
+
+// WithFirstID sets the ID handed out first. Values below 1 are ignored.
+func WithFirstID(id uint64) Option {
+	return func(s *Service) {
+		if id >= 1 {
+			s.ID = id
+		}
 	}
 }
 
