@@ -57,6 +57,10 @@ func validateAlias(a string) error {
 }
 
 func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error) {
+	if err := ctx.Err(); err != nil {
+		return Link{}, err
+	}
+
 	if len(req.OwnerID) == 0 {
 		return Link{}, ErrEmptyOwner
 	}
@@ -127,12 +131,43 @@ func (s *Service) Shorten(ctx context.Context, req ShortenRequest) (Link, error)
 }
 
 func (s *Service) Resolve(ctx context.Context, code string) (Link, error) {
-	now := s.now()
-	l, err := s.Store.ByCode(ctx, code)
-
-	if err != nil {
-		return Link{}, fmt.Errorf("failed to resolve the code %q: %w", code, err)
+	if err := ctx.Err(); err != nil {
+		return Link{}, err
 	}
+
+	var l Link
+
+	if s.cache != nil {
+		if cachedLink, ok := s.cache.Get(code); ok {
+			l = cachedLink
+		} else {
+			var err error
+			l, err = s.Store.ByCode(ctx, code)
+
+			if err != nil {
+				return Link{}, fmt.Errorf(
+					"failed to resolve the code %q: %w",
+					code,
+					err,
+				)
+			}
+
+			s.cache.Put(code, l)
+		}
+	} else {
+		var err error
+		l, err = s.Store.ByCode(ctx, code)
+
+		if err != nil {
+			return Link{}, fmt.Errorf(
+				"failed to resolve the code %q: %w",
+				code,
+				err,
+			)
+		}
+	}
+
+	now := s.now()
 
 	if !l.ExpiresAt.IsZero() && !l.ExpiresAt.After(now) {
 		return Link{}, ErrExpired
@@ -142,6 +177,10 @@ func (s *Service) Resolve(ctx context.Context, code string) (Link, error) {
 }
 
 func (s *Service) List(ctx context.Context, ownerID string, page Page) ([]Link, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	if ownerID == "" {
 		return nil, ErrEmptyOwner
 	}
@@ -150,6 +189,10 @@ func (s *Service) List(ctx context.Context, ownerID string, page Page) ([]Link, 
 }
 
 func (s *Service) Delete(ctx context.Context, ownerID string, code string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	if len(ownerID) == 0 {
 		return ErrEmptyOwner
 	}
@@ -171,6 +214,11 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 	if err = s.Store.Delete(ctx, l.ID); err != nil {
 		return fmt.Errorf("failed to delete the link - unexpected error occurred: %w", err)
 	}
+
+	if s.cache != nil {
+		s.cache.Delete(code)
+	}
+
 	return nil
 }
 
@@ -178,6 +226,21 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 func WithClock(now func() time.Time) Option {
 	return func(s *Service) {
 		s.now = now
+	}
+}
+
+// WithFirstID sets the ID handed out first. Values below 1 are ignored.
+func WithFirstID(id uint64) Option {
+	return func(s *Service) {
+		if id >= 1 {
+			s.ID = id
+		}
+	}
+}
+
+func WithCache(c Cache) Option {
+	return func(s *Service) {
+		s.cache = c
 	}
 }
 
