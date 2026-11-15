@@ -51,6 +51,27 @@ These hold for every milestone.
 ## Shortener
 The Shortener interface provides an API for managing shortened URLs. It allows users to create short links with optional custom aliases and expiration dates, resolve short codes to their original URLs, and delete links. It also supports listing links owned by a specific user with cursor-based pagination.
 
+## Complexity
+
+Let:
+- `n` be the number of items stored in the LRU cache;
+- `L` be the length of a word or prefix;
+- `k` be the number of words returned by `WithPrefix`;
+- `N` be the size of the TopK heap.
+
+| Structure | Operation | Average time | Worst-case time |
+|:--|:--|:--|:--|
+| LRU | Get | O(1) | O(n) |
+| LRU | Put | O(1) | O(n) |
+| trie | Insert | O(L) | O(L) |
+| trie | WithPrefix | O(L + V) | O(L + V) |
+| topk | Add | O(log N) | O(log N) |
+| topk | Result | O(N log N) | O(N log N) |
+
+Here, `V` is the number of trie nodes visited while collecting the matching words. It depends on the structure of the matching subtree and is not necessarily equal to `k`.
+
+LRU.Get remains O(1) on average even though it moves an entry, because moving an element in a doubly linked list takes constant time. A hash map provides O(1) average lookup of the list element, while the doubly linked list allows it to be moved to the front without searching.
+
 ## Working on it
 
 ```bash
