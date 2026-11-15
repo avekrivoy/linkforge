@@ -52,10 +52,9 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.HTTPAddr = ":8080"
 	} else {
-		_, _, err := net.SplitHostPort(httpAddr)
-
-		if err != nil {
-			configErrors = append(configErrors, fmt.Errorf("LF_HTTP_ADDR: config: %w", ErrInvalid))
+		if !validAddr(httpAddr) {
+			configErrors = append(configErrors,
+				fmt.Errorf("LF_HTTP_ADDR: config: %w", ErrInvalid))
 		}
 
 		cfg.HTTPAddr = httpAddr
@@ -66,11 +65,11 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.AdminAddr = "127.0.0.1:6060"
 	} else {
-		_, _, err := net.SplitHostPort(adminAddr)
-
-		if err != nil {
-			configErrors = append(configErrors, fmt.Errorf("LF_ADMIN_ADDR: config: %w", ErrInvalid))
+		if !validAddr(adminAddr) {
+			configErrors = append(configErrors,
+				fmt.Errorf("LF_ADMIN_ADDR: config: %w", ErrInvalid))
 		}
+
 		cfg.AdminAddr = adminAddr
 	}
 
@@ -79,11 +78,11 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.TCPAddr = ":7070"
 	} else {
-		_, _, err := net.SplitHostPort(tcpAddr)
-
-		if err != nil {
-			configErrors = append(configErrors, fmt.Errorf("LF_TCP_ADDR: config: %w", ErrInvalid))
+		if !validAddr(tcpAddr) {
+			configErrors = append(configErrors,
+				fmt.Errorf("LF_TCP_ADDR: config: %w", ErrInvalid))
 		}
+
 		cfg.TCPAddr = tcpAddr
 	}
 
@@ -133,16 +132,16 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	logLevel, ok := l.get("LF_LOG_LEVEL")
 
 	if !ok {
-		cfg.LogLevel = slog.LevelInfo
+		logLevel = "info"
 	}
 
 	level, err := ParseLevel(logLevel)
 
-	if err == nil {
-		cfg.LogLevel = level
-	} else {
+	if err != nil {
 		configErrors = append(configErrors,
 			fmt.Errorf("LF_LOG_LEVEL: config: %w", ErrInvalid))
+	} else {
+		cfg.LogLevel = level
 	}
 
 	if len(configErrors) != 0 {
@@ -154,7 +153,7 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 }
 
 func ParseLevel(s string) (slog.Level, error) {
-	switch strings.ToLower(s) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "debug":
 		return slog.LevelDebug, nil
 	case "info":
@@ -179,4 +178,18 @@ func (c Config) LogValue() slog.Value {
 		slog.Int("cache_size", c.CacheSize),
 		slog.String("log_level", c.LogLevel.String()),
 	)
+}
+
+func validAddr(addr string) bool {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		return false
+	}
+
+	return portNumber >= 1 && portNumber <= 65535
 }
