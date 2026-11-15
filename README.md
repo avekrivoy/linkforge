@@ -72,6 +72,16 @@ Here, `V` is the number of trie nodes visited while collecting the matching word
 
 LRU.Get remains O(1) on average even though it moves an entry, because moving an element in a doubly linked list takes constant time. A hash map provides O(1) average lookup of the list element, while the doubly linked list allows it to be moved to the front without searching.
 
+## Concurrency
+
+- `Counters` has a single owner goroutine that exclusively owns and modifies the counters data.
+- Other goroutines communicate with the owner through request and response channels.
+- `Pipeline` uses an `RWMutex` to protect its lifecycle state (`started`, `closed`) and coordinate access to the queue.
+- `Submit` takes the read lock because it only checks the state and attempts a non-blocking send; multiple submissions can proceed concurrently.
+- `Shutdown` takes the write lock, preventing concurrent submissions while it marks the pipeline as closed and closes the queue.
+- Only `Shutdown` closes the queue, ensuring it is closed exactly once and never while a submission is sending.
+- Shutdown first stops accepting new events, then closes the queue, waits for workers to drain and flush their batches, and cancels the pipeline context if the caller's context expires.
+
 ## Working on it
 
 ```bash
