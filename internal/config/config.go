@@ -52,13 +52,13 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.HTTPAddr = ":8080"
 	} else {
+		_, _, err := net.SplitHostPort(httpAddr)
+
+		if err != nil {
+			configErrors = append(configErrors, fmt.Errorf("LF_HTTP_ADDR: config: %w", ErrInvalid))
+		}
+
 		cfg.HTTPAddr = httpAddr
-	}
-
-	_, _, err := net.SplitHostPort(httpAddr)
-
-	if err != nil {
-		configErrors = append(configErrors, fmt.Errorf("LF_HTTP_ADDR: config: %w", ErrInvalid))
 	}
 
 	adminAddr, ok := l.get("LF_ADMIN_ADDR")
@@ -66,13 +66,12 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.AdminAddr = "127.0.0.1:6060"
 	} else {
+		_, _, err := net.SplitHostPort(adminAddr)
+
+		if err != nil {
+			configErrors = append(configErrors, fmt.Errorf("LF_ADMIN_ADDR: config: %w", ErrInvalid))
+		}
 		cfg.AdminAddr = adminAddr
-	}
-
-	_, _, err = net.SplitHostPort(adminAddr)
-
-	if err != nil {
-		configErrors = append(configErrors, fmt.Errorf("LF_ADMIN_ADDR: config: %w", ErrInvalid))
 	}
 
 	tcpAddr, ok := l.get("LF_TCP_ADDR")
@@ -80,13 +79,12 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 	if !ok {
 		cfg.TCPAddr = ":7070"
 	} else {
+		_, _, err := net.SplitHostPort(tcpAddr)
+
+		if err != nil {
+			configErrors = append(configErrors, fmt.Errorf("LF_TCP_ADDR: config: %w", ErrInvalid))
+		}
 		cfg.TCPAddr = tcpAddr
-	}
-
-	_, _, err = net.SplitHostPort(tcpAddr)
-
-	if err != nil {
-		configErrors = append(configErrors, fmt.Errorf("LF_TCP_ADDR: config: %w", ErrInvalid))
 	}
 
 	pgDSN, ok := l.get("LF_PG_DSN")
@@ -99,7 +97,7 @@ func (l *EnvLoader) Load(ctx context.Context) (Config, error) {
 
 	mongoURI, ok := l.get("LF_MONGO_URI")
 
-	if !ok || len(pgDSN) == 0 {
+	if !ok || len(mongoURI) == 0 {
 		configErrors = append(configErrors, fmt.Errorf("LF_MONGO_URI: config: %w", ErrMissing))
 	} else {
 		cfg.MongoURI = mongoURI
