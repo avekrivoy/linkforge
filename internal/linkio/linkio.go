@@ -104,7 +104,7 @@ func WriteCSV(w io.Writer, links []link.Link) error {
 	for _, l := range links {
 		expiresAt := ""
 
-		if l.ExpiresAt.IsZero() {
+		if !l.ExpiresAt.IsZero() {
 			expiresAt = l.ExpiresAt.UTC().Format(time.RFC3339)
 		}
 
