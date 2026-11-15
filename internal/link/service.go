@@ -135,12 +135,39 @@ func (s *Service) Resolve(ctx context.Context, code string) (Link, error) {
 		return Link{}, err
 	}
 
-	now := s.now()
-	l, err := s.Store.ByCode(ctx, code)
+	var l Link
 
-	if err != nil {
-		return Link{}, fmt.Errorf("failed to resolve the code %q: %w", code, err)
+	if s.cache != nil {
+		if cachedLink, ok := s.cache.Get(code); ok {
+			l = cachedLink
+		} else {
+			var err error
+			l, err = s.Store.ByCode(ctx, code)
+
+			if err != nil {
+				return Link{}, fmt.Errorf(
+					"failed to resolve the code %q: %w",
+					code,
+					err,
+				)
+			}
+
+			s.cache.Put(code, l)
+		}
+	} else {
+		var err error
+		l, err = s.Store.ByCode(ctx, code)
+
+		if err != nil {
+			return Link{}, fmt.Errorf(
+				"failed to resolve the code %q: %w",
+				code,
+				err,
+			)
+		}
 	}
+
+	now := s.now()
 
 	if !l.ExpiresAt.IsZero() && !l.ExpiresAt.After(now) {
 		return Link{}, ErrExpired
@@ -187,6 +214,11 @@ func (s *Service) Delete(ctx context.Context, ownerID string, code string) error
 	if err = s.Store.Delete(ctx, l.ID); err != nil {
 		return fmt.Errorf("failed to delete the link - unexpected error occurred: %w", err)
 	}
+
+	if s.cache != nil {
+		s.cache.Delete(code)
+	}
+
 	return nil
 }
 
@@ -203,6 +235,12 @@ func WithFirstID(id uint64) Option {
 		if id >= 1 {
 			s.ID = id
 		}
+	}
+}
+
+func WithCache(c Cache) Option {
+	return func(s *Service) {
+		s.cache = c
 	}
 }
 

@@ -40,6 +40,13 @@ type Service struct {
 	ID    uint64
 	now   func() time.Time
 	Store Store
+	cache Cache
 }
 
 type Option func(*Service)
+
+type Cache interface {
+	Get(code string) (Link, bool)
+	Put(code string, l Link)
+	Delete(code string)
+}
